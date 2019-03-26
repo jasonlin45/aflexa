@@ -73,10 +73,20 @@ def sign_in(intent, session):
 		speech_output = "Name input was invalid. "\
 						"Are you a valid user?"
 	should_end_session = False
-	reprompt_text = "What's your name?"
+	reprompt_text = "Flex, express, meal swipes, or laundry?"
 	return build_response(session_attributes, build_speechlet_response(
 		card_title, speech_output, reprompt_text, should_end_session))
 
+def unrecognized_intent(intent, session):
+	session_attributes = session.get('attributes', {})
+	card_title = "Fallback"
+	speech_output = "I didn't get that. "\
+					"Try again."
+	should_end_session = False
+	reprompt_text = "I didn't get that.  Try again?"
+	return build_response(session_attributes, build_speechlet_response(
+		card_title, speech_output, reprompt_text, should_end_session))
+		
 def get_welcome_response():
 	speech_output = "Welcome to the Aflexa, your personal William and Mary services assistant. " \
 					"What is your name?"
@@ -148,90 +158,30 @@ def get_balance(intent, session):
 	return build_response(session_attributes, build_speechlet_response(
 		intent['name'], speech_output, reprompt_text, should_end_session))
 
-def get_expbal_from_session(intent, session):
-	session_attributes = ses_att
-	reprompt_text = None
-
-	if session.get('attributes', {}) and "expBal" in session.get('attributes', {}):
-		exp_bal = session['attributes']['expBal']
-		speech_output = "Your express balance is " + str(exp_bal)
-		should_end_session = False
-
-	else:
-		speech_output = "I'm not sure what your express balance is. "
-		should_end_session = True
-
-	# Setting reprompt_text to None signifies that we do not want to reprompt
-	# the user. If the user does not respond or says something that is not
-	# understood, the session will end.
-	return build_response(session_attributes, build_speechlet_response(
-		intent['name'], speech_output, reprompt_text, should_end_session))
-
-def get_swipes_from_session(intent, session):
-	session_attributes = ses_att
-	reprompt_text = None
-
-	if session.get('attributes', {}) and "swipesBal" in session.get('attributes', {}):
-		swipes_bal = session['attributes']['swipesBal']
-		speech_output = "You have " + str(swipes_bal) + " swipes left."
-		should_end_session = False
-	else:
-		speech_output = "I'm not sure what your meal swipe balance is. "
-		should_end_session = True
-
-
-	# Setting reprompt_text to None signifies that we do not want to reprompt
-	# the user. If the user does not respond or says something that is not
-	# understood, the session will end.
-	return build_response(session_attributes, build_speechlet_response(
-		intent['name'], speech_output, reprompt_text, should_end_session))
-
-def set_location_from_session(intent, session):
-	card_title = intent['Name']
-	session_attributes = ses_att
-	reprompt_text = None
-	if 'Floor' in intent['slots']:
-		locationInfo = intent['slots']['Floor']['value']
-		ses_att.update({"locationInfo": locationInfo})
-		speech_output = "Please ask about your laundry again."
-		should_end_session = False
-	else:
-		speech_output = "That's not a location in that building."
-		should_end_session = True
-
-	return build_response(session_attributes, build_speechlet_response(
-		card_title, speech_output, reprompt_text, should_end_session))
-
-def set_dorm_from_session(intent, session):
-	card_title = intent['Name']
-	session_attributes = ses_att
-	reprompt_text = None
-	try:
-		if 'Dorm' in intent['slots']:
-			dormInfo = intent['slots']['Dorm']['value']
-			ses_att.update({"dormInfo":dormInfo})
-			speech_output = "Now choose a laundry room in that building."
-			should_end_session = False
-		else:
-			speech_output = "That's not a building."
-			should_end_session = True
-	except Exception as e:
-		speech_output = str(e)
-		should_end_session = True
-	return build_response(session_attributes, build_speechlet_response(
-		card_title, speech_output, reprompt_text, should_end_session))
-
 def get_big_boy_from_session(intent, session):
-	session_attributes = ses_att
+	session_attributes = session['attributes']
 	reprompt_text = ""
 	speech_output = ""
-	try:
-		crawl = crawler.Crawler()
-		results = crawl.getLaundryData(session_attributes['laundryData'], "")
-		for result in results:
-			speech_output = speech_output + result[0] + " has " + result[1] + " washers " + result[2] + " dryers available. "
-	except Exception as e:
-		speech_output = str(e)
+	if 'laundryData' in session_attributes:
+		rooms = session_attributes['laundryData']
+		for room in rooms:
+			speech_output = speech_output + room[0] + " has " + room[1] + " washers " + room[2] + " dryers available. "
+	else:
+		try:
+			crawl = crawler.Crawler()
+			name = session_attributes['name']
+			ENCRYPTED = os.environ[name]
+			DECRYPTED = boto3.client('kms').decrypt(CiphertextBlob=b64decode(ENCRYPTED))['Plaintext']
+			idPass = DECRYPTED.split()
+			username = idPass[0]
+			password = idPass[1]
+			crawl.login(username, password)
+			session_attributes['laundryData'] = crawl.checkLaundry()
+			rooms = session_attributes['laundryData']
+			for room in rooms:
+				speech_output = speech_output + room[0] + " has " + room[1] + " washers " + room[2] + " dryers available. "
+		except Exception as e:
+			speech_output = str(e)
 	should_end_session = False
 	return build_response(session_attributes, build_speechlet_response(intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -325,6 +275,8 @@ def on_intent(intent_request, session):
 		return get_welcome_response()
 	elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
 		return handle_session_end_request()
+	elif intent_name == "AMAZON.FallbackIntent":
+		return unrecognized_intent(intent, session)
 	else:
 		raise ValueError("Invalid intent")
 

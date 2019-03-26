@@ -118,27 +118,33 @@ def handle_session_end_request():
 def get_balance(intent, session):
 	session_attributes = session.get('attributes', {})
 	reprompt_text = "Which account would you like your balance for?"
-	if session.get('attributes', {}) and "balances" in session.get('attributes', {}):
-		if 'account' in intent['slots']:
-			account = intent['slots']['account']['value']
-			if account == 'swipes':
-				speech_output = "You have " + session_attributes['balances']['swipesBal'] + " swipes remaining"
-			elif account == 'express':
-				speech_output = "You have " + session_attributes['balances']['expBal'] + " in your express account"
-			elif account == 'flex':
-				speech_output = "You have " + session_attributes['balances']['flexBal'] + " flex"
-			elif account == 'all':
-				speech_output = "You have " + session_attributes['balances']['swipesBal'] + "swipes, " +\
-										  session_attributes['balances']['flexBal'] + " in flex, and " +\
-										  session_attributes['balances']['expBal'] + " in your express account."
+	try:
+		if session.get('attributes', {}) and "balances" in session.get('attributes', {}):
+			if 'account' in intent['slots']:
+				if 'resolutions' in intent['slots']['account']:
+					account = intent['slots']['account']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['name']
+				else:
+					account = intent['slots']['account']['value']
+				if account == 'swipes':
+					speech_output = "You have " + session_attributes['balances']['swipesBal'] + " swipes remaining"
+				elif account == 'express':
+					speech_output = "You have " + session_attributes['balances']['expBal'] + " in your express account"
+				elif account == 'flex':
+					speech_output = "You have " + session_attributes['balances']['flexBal'] + " flex"
+				elif account == 'all':
+					speech_output = "You have " + session_attributes['balances']['swipesBal'] + "swipes, " +\
+											  session_attributes['balances']['flexBal'] + " in flex, and " +\
+											  session_attributes['balances']['expBal'] + " in your express account."
+			else:
+				speech_output = "Please specify an account"
+			should_end_session = False
 		else:
-			speech_output = "Please specify an account"
-		should_end_session = False
-	else:
-		speech_output = "I do not have your balance information,"\
-						"Try stating your name first"
-		should_end_session = False
-
+			speech_output = "I do not have your balance information,"\
+							"Try stating your name first"
+			should_end_session = False
+	except Exception as e:
+		speech_output = str(e)
+		should_end_session = True
 	return build_response(session_attributes, build_speechlet_response(
 		intent['name'], speech_output, reprompt_text, should_end_session))
 

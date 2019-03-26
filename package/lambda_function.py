@@ -8,9 +8,12 @@ http://amzn.to/1LGWsLG
 """
 
 from __future__ import print_function
+import boto3
+import os
+
+from base64 import b64decode
+
 import crawler
-global ses_att
-ses_att = {}
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -45,14 +48,39 @@ def build_response(session_attributes, speechlet_response):
 
 # --------------- Functions that control the skill's behavior ------------------
 
+def sign_in(intent, session):
+	session_attributes = session.get('attributes', {})
+	card_title = "Sign In"
+	if 'Name' in intent['slots']:
+		try:
+			name = intent['slots']['Name']['value']
+			ENCRYPTED = os.environ[name]
+			DECRYPTED = boto3.client('kms').decrypt(CiphertextBlob=b64decode(ENCRYPTED))['Plaintext']
+			idPass = DECRYPTED.split()
+			username = idPass[0]
+			password = idPass[1]
+			crawl = crawler.Crawler()
+			crawl.login(username,password)
+			data = crawl.checkCash()
+			session_attributes['balances'] = {"expBal" : data[0], "flexBal": data[1], "swipesBal": data[2]}
+			session_attributes['name'] = name
+			speech_output = "Hi " + name + \
+						", would you like to check your flex, express, or meal swipes?" \
+						" You can also check the availability of laundry machines."
+		except Exception as e:
+			speech_output = str(e)
+	else:
+		speech_output = "Name input was invalid. "\
+						"Are you a valid user?"
+	should_end_session = False
+	reprompt_text = "What's your name?"
+	return build_response(session_attributes, build_speechlet_response(
+		card_title, speech_output, reprompt_text, should_end_session))
+
 def get_welcome_response():
-	""" If we wanted to initialize the session to have some attributes we could
-	add those here
-	"""
 	speech_output = "Welcome to the Aflexa, your personal William and Mary services assistant. " \
-					"Would you like to check your flex or express balance, meal swipes, or laundry machines?"
-	#session_attributes = {"expBal": "1", "flexBal": "1", "swipesBal": "1"}
-	try:
+					"What is your name?"
+	"""try:
 		crawl = crawler.Crawler()
 		try:
 			crawl.login("USERNAME","PASSWORD")
@@ -66,20 +94,13 @@ def get_welcome_response():
 		expBal = data[0]
 		flexBal = data[1]
 		swipesBal = data[2]
-		#laundryInfo = crawl.checkLaundry()
 	except Exception as e:
-		speech_output = str(e)
-	try:
-		session_attributes = {"expBal": expBal, "flexBal": flexBal, "swipesBal": swipesBal, "laundryData": laundry}
-						  #Exp	   #Flex	#Swipes
-		ses_att.update({"expBal": expBal, "flexBal": flexBal, "swipesBal": swipesBal, "laundryData": laundry})
-	except Exception as e:
-		speech_output = str(e)
+		speech_output = str(e)"""
+	session_attributes = {}
 	card_title = "Welcome"
-	
 	# If the user either does not reply to the welcome message or says something
 	# that is not understood, they will be prompted again with this text.
-	reprompt_text = "Would you like to check your flex or express balance, meal swipes, or laundry machines?"
+	reprompt_text = "Please state your name"
 	should_end_session = False
 	return build_response(session_attributes, build_speechlet_response(
 		card_title, speech_output, reprompt_text, should_end_session))
@@ -94,20 +115,30 @@ def handle_session_end_request():
 	return build_response({}, build_speechlet_response(
 		card_title, speech_output, None, should_end_session))
 
-def get_flex_from_session(intent, session):
-	session_attributes = ses_att
-	reprompt_text = None
-	if session.get('attributes', {}) and "flexBal" in session.get('attributes', {}):
-		flex_bal = session['attributes']['flexBal']
-		speech_output = "Your flex balance is " + str(flex_bal)
+def get_balance(intent, session):
+	session_attributes = session.get('attributes', {})
+	reprompt_text = "Which account would you like your balance for?"
+	if session.get('attributes', {}) and "balances" in session.get('attributes', {}):
+		if 'account' in intent['slots']:
+			account = intent['slots']['account']['value']
+			if account == 'swipes':
+				speech_output = "You have " + session_attributes['balances']['swipesBal'] + " swipes remaining"
+			elif account == 'express':
+				speech_output = "You have " + session_attributes['balances']['expBal'] + " in your express account"
+			elif account == 'flex':
+				speech_output = "You have " + session_attributes['balances']['flexBal'] + " flex"
+			elif account == 'all':
+				speech_output = "You have " + session_attributes['balances']['swipesBal'] + "swipes, " +\
+										  session_attributes['balances']['flexBal'] + " in flex, and " +\
+										  session_attributes['balances']['expBal'] + " in your express account."
+		else:
+			speech_output = "Please specify an account"
 		should_end_session = False
 	else:
-		speech_output = "I'm not sure what your flex balance is. "
-		should_end_session = True
+		speech_output = "I do not have your balance information,"\
+						"Try stating your name first"
+		should_end_session = False
 
-	# Setting reprompt_text to None signifies that we do not want to reprompt
-	# the user. If the user does not respond or says something that is not
-	# understood, the session will end.
 	return build_response(session_attributes, build_speechlet_response(
 		intent['name'], speech_output, reprompt_text, should_end_session))
 
@@ -245,7 +276,7 @@ def on_session_started(session_started_request, session):
 
 	print("on_session_started requestId=" + session_started_request['requestId']
 		  + ", sessionId=" + session['sessionId'])
-
+	return get_welcome_response()
 
 def on_launch(launch_request, session):
 	""" Called when the user launches the skill without specifying what they
@@ -268,12 +299,14 @@ def on_intent(intent_request, session):
 	intent_name = intent_request['intent']['name']
 
 	# Dispatch to your skill's intent handlers
-	if intent_name == "WhatsMyExpressIntent":
-		return get_expbal_from_session(intent, session)
+	if intent_name == "balanceIntent":
+		return get_balance(intent, session)
+		"""
 	elif intent_name == "WhatsMyFlexIntent":
 		return get_flex_from_session(intent, session)
-	elif intent_name == "SwipesIntent":
-		return get_swipes_from_session(intent, session)
+		"""
+	elif intent_name == "nameIntent":
+		return sign_in(intent, session)
 	elif intent_name == "LaundryIntent":
 		return get_laundry_from_session(intent, session)
 	elif intent_name == "BigIntent":

@@ -1,0 +1,221 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "aflexa",
+            "intents": [
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                },
+                {
+                    "name": "balanceIntent",
+                    "slots": [
+                        {
+                            "name": "account",
+                            "type": "LIST_OF_ACCOUNTS",
+                            "samples": [
+                                "{account}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "H M U with {account}",
+                        "Yo hit me up with that {account}",
+                        "{account} me",
+                        "{account} on me",
+                        "Give my {account}",
+                        "{account} please",
+                        "{account}",
+                        "What's my {account} balance"
+                    ]
+                },
+                {
+                    "name": "nameIntent",
+                    "slots": [
+                        {
+                            "name": "Name",
+                            "type": "LIST_OF_USERS",
+                            "samples": [
+                                "{Name}"
+                            ]
+                        }
+                    ],
+                    "samples": [
+                        "Authenticate as {Name}",
+                        "Me {Name}",
+                        "Sign in as {Name}",
+                        "I am {Name}",
+                        "{Name}",
+                        "My name is {Name}"
+                    ]
+                },
+                {
+                    "name": "BigIntent",
+                    "slots": [],
+                    "samples": [
+                        "i want all machines",
+                        "give me everything"
+                    ]
+                }
+            ],
+            "types": [
+                {
+                    "name": "LIST_OF_ACCOUNTS",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "all",
+                                "synonyms": [
+                                    "all accounts",
+                                    "everything"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "swipes",
+                                "synonyms": [
+                                    "swipe",
+                                    "meal"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "express"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "flex",
+                                "synonyms": [
+                                    "dining cash",
+                                    "dining money",
+                                    "dining dollars"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LIST_OF_USERS",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "David"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Jason"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "balanceIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "account",
+                            "type": "LIST_OF_ACCOUNTS",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.251914497335.1360499992018"
+                            },
+                            "validations": [
+                                {
+                                    "type": "hasEntityResolutionMatch",
+                                    "prompt": "Slot.Validation.251914497335.1360499992018.980101238835"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "nameIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "Name",
+                            "type": "LIST_OF_USERS",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.285847689389.905315536288"
+                            },
+                            "validations": [
+                                {
+                                    "type": "hasEntityResolutionMatch",
+                                    "prompt": "Slot.Validation.285847689389.905315536288.798576096908"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "ALWAYS"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.251914497335.1360499992018",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Meal swipes, express funds, or flex dollars?"
+                    }
+                ]
+            },
+            {
+                "id": "Slot.Validation.251914497335.1360499992018.980101238835",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "I'm sorry, I didn't get that.  Meal swipes, flex dollars, or express funds?"
+                    }
+                ]
+            },
+            {
+                "id": "Slot.Validation.285847689389.905315536288.798576096908",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "Sorry, I didn't recognize that name.  Try again."
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.285847689389.905315536288",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "What is your name?"
+                    }
+                ]
+            }
+        ]
+    }
+}

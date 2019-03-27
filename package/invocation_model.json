@@ -72,6 +72,18 @@
                         "i want all machines",
                         "give me everything"
                     ]
+                },
+                {
+                    "name": "laundryIntent",
+                    "slots": [
+                        {
+                            "name": "Dorm",
+                            "type": "LIST_OF_BUILDINGS"
+                        }
+                    ],
+                    "samples": [
+                        "laundry in {Dorm}"
+                    ]
                 }
             ],
             "types": [
@@ -91,6 +103,7 @@
                             "name": {
                                 "value": "swipes",
                                 "synonyms": [
+                                    "meals",
                                     "swipe",
                                     "meal"
                                 ]
@@ -105,6 +118,9 @@
                             "name": {
                                 "value": "flex",
                                 "synonyms": [
+                                    "chic cash",
+                                    "chic fil a dollars",
+                                    "wawa money",
                                     "dining cash",
                                     "dining money",
                                     "dining dollars"
@@ -124,6 +140,184 @@
                         {
                             "name": {
                                 "value": "Jason"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Alex"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LIST_OF_BUILDINGS",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "barrett"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "brown"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "bryan"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "chandler"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dinwiddie"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dupont"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "eagle"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "FH",
+                                "synonyms": [
+                                    "frat house"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "fauquier"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "gooch"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "grad",
+                                "synonyms": [
+                                    "gradplex"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "griffin"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "hardy"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "hunt"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "jefferson"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "landrum"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "lemon"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "lion"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ludwell"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "monroe"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "nicholson"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "old dominion",
+                                "synonyms": [
+                                    "OD"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "one tribe place",
+                                "synonyms": [
+                                    "OTP",
+                                    "hoe house"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "reeves"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "richmond"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "sorority"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "spotswood"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tolliver"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tazwell"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tribe square"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "yates"
                             }
                         }
                     ]

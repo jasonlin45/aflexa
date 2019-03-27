@@ -140,7 +140,7 @@ def get_balance(intent, session):
 				elif account == 'express':
 					speech_output = "You have " + session_attributes['balances']['expBal'] + " in your express account"
 				elif account == 'flex':
-					speech_output = "You have " + session_attributes['balances']['flexBal'] + " flex"
+					speech_output = "You have " + session_attributes['balances']['flexBal'] + " in flex"
 				elif account == 'all':
 					speech_output = "You have " + session_attributes['balances']['swipesBal'] + "swipes, " +\
 											  session_attributes['balances']['flexBal'] + " in flex, and " +\
@@ -158,42 +158,62 @@ def get_balance(intent, session):
 	return build_response(session_attributes, build_speechlet_response(
 		intent['name'], speech_output, reprompt_text, should_end_session))
 
+
 def get_big_boy_from_session(intent, session):
 	session_attributes = session['attributes']
 	reprompt_text = ""
 	speech_output = ""
-	if 'laundryData' in session_attributes:
-		rooms = session_attributes['laundryData']
-		for room in rooms:
-			speech_output = speech_output + room[0] + " has " + room[1] + " washers " + room[2] + " dryers available. "
-	else:
-		try:
-			crawl = crawler.Crawler()
-			name = session_attributes['name']
-			ENCRYPTED = os.environ[name]
-			DECRYPTED = boto3.client('kms').decrypt(CiphertextBlob=b64decode(ENCRYPTED))['Plaintext']
-			idPass = DECRYPTED.split()
-			username = idPass[0]
-			password = idPass[1]
-			crawl.login(username, password)
-			session_attributes['laundryData'] = crawl.checkLaundry()
+	if 'name' in session_attributes:
+		if 'laundryData' in session_attributes:
 			rooms = session_attributes['laundryData']
 			for room in rooms:
 				speech_output = speech_output + room[0] + " has " + room[1] + " washers " + room[2] + " dryers available. "
-		except Exception as e:
-			speech_output = str(e)
-	should_end_session = False
+		else:
+			try:
+				crawl = crawler.Crawler()
+				name = session_attributes['name']
+				ENCRYPTED = os.environ[name]
+				DECRYPTED = boto3.client('kms').decrypt(CiphertextBlob=b64decode(ENCRYPTED))['Plaintext']
+				idPass = DECRYPTED.split()
+				username = idPass[0]
+				password = idPass[1]
+				crawl.login(username, password)
+				session_attributes['laundryData'] = crawl.checkLaundry()
+				rooms = session_attributes['laundryData']
+				for room in rooms:
+					speech_output = speech_output + room[0] + " has " + room[1] + " washers " + room[2] + " dryers available. "
+			except Exception as e:
+				speech_output = str(e)
+	else:
+		speech_output = "Failed, sign on with your name first."
+		should_end_session = False
 	return build_response(session_attributes, build_speechlet_response(intent['name'], speech_output, reprompt_text, should_end_session))
 
 def get_laundry_from_session(intent, session):
-	session_attributes = ses_att
-	reprompt_text = ""
+	session_attributes = session['attributes']
+	reprompt_text = "Laundry?"
 	speech_output = ""
 	should_end_session = False
-	if session.get('attributes', {}) and "laundryData" in session.get('attributes', {}):
+	if 'name' in session_attributes:
+		if 'laundryData' not in session_attributes:
+			try:
+				crawl = crawler.Crawler()
+				name = session_attributes['name']
+				ENCRYPTED = os.environ[name]
+				DECRYPTED = boto3.client('kms').decrypt(CiphertextBlob=b64decode(ENCRYPTED))['Plaintext']
+				idPass = DECRYPTED.split()
+				username = idPass[0]
+				password = idPass[1]
+				crawl.login(username, password)
+				session_attributes['laundryData'] = crawl.checkLaundry()
+			except Exception as e:
+				speech_output = str(e)
 		if 'Dorm' in intent['slots']:
 			crawl = crawler.Crawler()
-			dorm = intent['slots']['Dorm']['value']
+			if 'resolutions' in intent['slots']['Dorm']:
+				dorm = intent['slots']['Dorm']['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['name']
+			else:
+				dorm = intent['slots']['Dorm']['value']
 			results = crawl.getLaundryData(session_attributes['laundryData'], dorm)
 			for result in results:
 				speech_output = speech_output + result[0] + " has " + result[1] + " washers " + result[2] + " dryers available. "
@@ -201,29 +221,9 @@ def get_laundry_from_session(intent, session):
 			speech_output = "Please say the name of a valid building"
 			reprompt_text = "Please specify the dorm and try again"
 	else:
-		speech_output = "Failed"
+		speech_output = "Failed, sign on with your name first."
 		should_end_session = False
-	should_end_session = False
-	#dorm = intent['slots']['Dorm']['value']
-		#try:
-	#		location = intent['slots']['Floor']['value']
-	#	except:
-	#		location = None
-	#	if(location is None):
-	#		laundry_info = crawler.getLaundryData(session_attributes['laundryData'], dorm)
-	#	else:
-	#		laundry_info = crawler.getLaundryData(session_attributes['laundryData'], dorm, location)
-	#	if len(laundry_info[0])==0:
-	#		speech_output = "This location was not found, try again with a valid location"
-	#	else:
-	#		speech_output = str(laundry_info[0][0]) + "has " + str(laundry_info[0][1]) + " washers and " + str(laundry_info[0][2]) + " dryers available."
-	#	should_end_session = False
-
-
-
-	# Setting reprompt_text to None signifies that we do not want to reprompt
-	# the user. If the user does not respond or says something that is not
-	# understood, the session will end.
+	
 	return build_response(session_attributes, build_speechlet_response(intent['name'], speech_output, reprompt_text, should_end_session))
 # --------------- Events ------------------
 
@@ -263,7 +263,7 @@ def on_intent(intent_request, session):
 		"""
 	elif intent_name == "nameIntent":
 		return sign_in(intent, session)
-	elif intent_name == "LaundryIntent":
+	elif intent_name == "laundryIntent":
 		return get_laundry_from_session(intent, session)
 	elif intent_name == "BigIntent":
 		return get_big_boy_from_session(intent, session)
@@ -271,6 +271,8 @@ def on_intent(intent_request, session):
 	#	return set_dorm_from_session(intent, session)
 	#elif intent_name == "FloorIntent":
 	#		return set_location_from_session(intent, session)
+	elif intent_name == "insultIntent":
+		return insult(intent, session)
 	elif intent_name == "AMAZON.HelpIntent":
 		return get_welcome_response()
 	elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
